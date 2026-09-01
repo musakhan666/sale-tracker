@@ -1,0 +1,3 @@
+# Known violations accepted as tech debt.
+# Format: file:rule:reason
+# Review quarterly. Delete lines as violations are fixed.
