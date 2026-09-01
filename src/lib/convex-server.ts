@@ -31,6 +31,10 @@ import type { Doc, Id } from "../../convex/_generated/dataModel";
 export type SaleWithBrand = {
   sale: Doc<"sales">;
   brandName: string;
+  /** The brand's stable, stored slug — the URL identity (CLAUDE.md). Never
+   *  derived from `brandName`: a filter or link keyed on a slugified
+   *  display name breaks the moment the brand is renamed. */
+  slug: string;
 };
 
 export type SalesFetchResult =
@@ -74,20 +78,26 @@ function getConvexClient(): ConvexHttpClient | null {
   return url === undefined || url === "" ? null : new ConvexHttpClient(url);
 }
 
-/** Every sale, soonest-opening first, paired with its brand's display name. */
+/** Every sale, soonest-opening first, paired with its brand's display name and stable slug. */
 export async function fetchSalesWithBrands(): Promise<SalesFetchResult> {
   const client = getConvexClient();
   if (client === null) return { ok: false, reason: "not-configured" };
 
   try {
     const [sales, brands] = await Promise.all([client.query(salesList, {}), client.query(brandsList, {})]);
-    const brandNameById = new Map(brands.map((brand) => [brand._id, brand.name]));
+    // Project both fields through in one pass — the brand document is
+    // already in hand here, so `slug` costs nothing extra to carry.
+    const brandById = new Map(brands.map((brand) => [brand._id, { name: brand.name, slug: brand.slug }]));
     return {
       ok: true,
-      sales: sales.map((sale) => ({
-        sale,
-        brandName: brandNameById.get(sale.brandId) ?? "Unknown brand",
-      })),
+      sales: sales.map((sale) => {
+        const brand = brandById.get(sale.brandId);
+        return {
+          sale,
+          brandName: brand?.name ?? "Unknown brand",
+          slug: brand?.slug ?? "unknown",
+        };
+      }),
     };
   } catch {
     return { ok: false, reason: "fetch-failed" };
