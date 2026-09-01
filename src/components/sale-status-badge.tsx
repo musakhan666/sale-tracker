@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
+import { useNow } from "@/hooks/use-now";
 import { cn } from "@/lib/cn";
 
 import { saleStatus, type SaleStatus } from "../../convex/lib/window";
-
-/** Matches rules/react-patterns.md's "Time-dependent rendering" cadence. */
-const REFRESH_INTERVAL_MS = 60_000;
 
 const STATUS_LABEL: Record<SaleStatus, string> = {
   upcoming: "Upcoming",
@@ -31,18 +27,13 @@ type SaleStatusBadgeProps = {
 };
 
 export function SaleStatusBadge({ startsAt, endsAt, initialStatus }: SaleStatusBadgeProps) {
-  // Seeded from the server's value so the first client render matches the
-  // server HTML exactly; reading Date.now() here would hydration-mismatch.
-  const [status, setStatus] = useState<SaleStatus>(initialStatus);
-
-  useEffect(() => {
-    const recompute = () => setStatus(saleStatus({ startsAt, endsAt }, Date.now()));
-    // Re-derive once immediately after mount — time may have already
-    // passed since the server rendered — then on every tick after that.
-    recompute();
-    const intervalId = setInterval(recompute, REFRESH_INTERVAL_MS);
-    return () => clearInterval(intervalId);
-  }, [startsAt, endsAt]);
+  const now = useNow();
+  // Before mount `now` is null: fall back to the server's own value so the
+  // first client render matches the server HTML exactly — reading the
+  // clock any earlier would hydration-mismatch. After mount, re-derive on
+  // every tick from the one shared window function rather than storing a
+  // second, driftable copy of status in state.
+  const status = now === null ? initialStatus : saleStatus({ startsAt, endsAt }, now);
 
   return (
     <span

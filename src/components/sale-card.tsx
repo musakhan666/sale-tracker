@@ -1,12 +1,8 @@
+import { SaleCountdown } from "@/components/sale-countdown";
 import { SaleStatusBadge } from "@/components/sale-status-badge";
 
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { SaleStatus } from "../../convex/lib/window";
-
-const startTimeFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
 
 type SaleCardProps = {
   sale: Doc<"sales">;
@@ -29,9 +25,7 @@ export function SaleCard({ sale, brandName, status }: SaleCardProps) {
           <div className="flex gap-1">
             <dt className="font-medium text-text">Starts</dt>
             <dd>
-              <time dateTime={new Date(sale.startsAt).toISOString()}>
-                {startTimeFormatter.format(sale.startsAt)}
-              </time>
+              <SaleCountdown startsAt={sale.startsAt} endsAt={sale.endsAt} initialStatus={status} />
             </dd>
           </div>
         </dl>
