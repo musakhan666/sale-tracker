@@ -27,9 +27,17 @@ BASE_COMMIT="1ab5f4ca9856d891c07c4e6c977376b28742355a"
 # existence) and is frozen/policed separately at collection — never here.
 EXEMPT_PATH="scripts/t0.sh"
 
-# Baked scope, from the handed sprint footprint. Never widened here.
+# Baked scope, from the handed sprint footprint.
 SCOPE_PREFIX_1="src/"
 SCOPE_PREFIX_2="convex/"
+
+# Session upward amendment: ticket #5 (Convex schema) legitimately adds the
+# `convex` package as a project dependency, which necessarily touches the
+# repo-root dependency manifests. Widened once, upward only, by the session
+# — not by implementer improvisation. Exact-match, not prefixes: this does
+# not open the repo root generally.
+SCOPE_EXACT_1="package.json"
+SCOPE_EXACT_2="package-lock.json"
 
 # Measured on the clean tree at generation time (0 pre-existing errors).
 TS_BASELINE=0
@@ -162,6 +170,7 @@ while IFS= read -r path; do
   is_exempt_path "$path" && continue
   case "$path" in
     "$SCOPE_PREFIX_1"*|"$SCOPE_PREFIX_2"*) continue ;;
+    "$SCOPE_EXACT_1"|"$SCOPE_EXACT_2") continue ;;
     *)
       FOOTPRINT_HITS="${FOOTPRINT_HITS}${path}
 "
@@ -192,7 +201,7 @@ if [ "$TS_RED" -eq 1 ] || [ -n "$SUPPRESSION_HITS" ] || [ -n "$FOOTPRINT_HITS" ]
   fi
 
   if [ -n "$FOOTPRINT_HITS" ]; then
-    echo "----- footprint guard — baked scope is src/**, convex/** -----"
+    echo "----- footprint guard — baked scope is src/**, convex/**, package.json, package-lock.json -----"
     printf '%s' "$FOOTPRINT_HITS"
     echo "path(s) above fall outside the sprint's baked scope"
     echo ""
