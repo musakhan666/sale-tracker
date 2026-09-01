@@ -85,8 +85,14 @@ for file in $TS_FILES; do
   fi
 
   # named exports only
+  # Convex mandates a default export for these entry points, exactly as Next.js
+  # does for page/layout — matched on full path so an unrelated schema.ts elsewhere
+  # is still checked.
+  case "$file" in
+    convex/schema.ts|convex/crons.ts|convex/http.ts|convex/auth.config.ts|convex/_generated/*) base="__framework__" ;;
+  esac
   case "$base" in
-    page.tsx|layout.tsx|loading.tsx|error.tsx|not-found.tsx|global-error.tsx|route.ts|middleware.ts|*.config.ts|*.config.mts) ;;
+    __framework__|page.tsx|layout.tsx|loading.tsx|error.tsx|not-found.tsx|global-error.tsx|route.ts|middleware.ts|*.config.ts|*.config.mts) ;;
     *)
       if echo "$code" | grep -qE '^export default '; then
         blocking "$file" "exports" "export default in a non-page file — use a named export"
