@@ -15,6 +15,16 @@ body {
   color: var(--color-text);
 }
 
+/* Brand tiles. A sale carries no image, so each brand gets a stable gradient
+   chosen from its slug — recognisable across pages, and never a broken image.
+   Colour literals live here, with the tokens, never in a component. */
+.brand-tile-0 { background-image: linear-gradient(145deg, #0f5c66 0%, #2f9aa4 55%, #a8dbdf 100%); }
+.brand-tile-1 { background-image: linear-gradient(145deg, #b8431f 0%, #e0552b 50%, #f6b795 100%); }
+.brand-tile-2 { background-image: linear-gradient(145deg, #1d3f6e 0%, #3f74b8 55%, #b9d2f0 100%); }
+.brand-tile-3 { background-image: linear-gradient(145deg, #5a3d78 0%, #8f6cb0 55%, #d8c6ea 100%); }
+.brand-tile-4 { background-image: linear-gradient(145deg, #2f6b3a 0%, #5aa668 55%, #c2e4c9 100%); }
+.brand-tile-5 { background-image: linear-gradient(145deg, #8a6320 0%, #c79A3c 55%, #efdcae 100%); }
+
 /* Respect viewers who have asked the OS to minimise motion. */
 @media (prefers-reduced-motion: reduce) {
   *,
