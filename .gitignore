@@ -13,3 +13,6 @@ build/
 *.tsbuildinfo
 next-env.d.ts
 /coverage
+
+# agent worktrees cut by the harness — never part of the project
+.claude/

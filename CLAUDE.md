@@ -58,16 +58,18 @@ syncing state to the URL with an effect, delete the state.
 
 ## Design tokens
 
-Defined in `src/app/globals.css` under `@theme`. Not yet chosen — fill this table
-when they are, and never use a hex literal in a component.
+Defined in `src/app/globals.css` under `@theme`. Never use a hex literal in a
+component — reference the token instead.
 
 | Token | Value | Use |
 |---|---|---|
-| `--color-primary` | TBD | dominant |
-| `--color-accent` | TBD | rare, high-emphasis (a live sale) |
-| `--color-bg` / `--color-surface` | TBD | tinted toward the brand hue, never `#fff` |
-| `--color-text` / `--color-muted` | TBD | never `#000` |
-| `--color-border` | TBD | |
+| `--color-primary` | `#0f5c66` | dominant |
+| `--color-accent` | `#e0552b` | rare, high-emphasis (a live sale) |
+| `--color-bg` | `#f7f5f1` | page background, tinted toward the brand hue, never `#fff` |
+| `--color-surface` | `#fffdfa` | card/panel background, tinted toward the brand hue, never `#fff` |
+| `--color-text` | `#12232a` | primary text, never `#000` |
+| `--color-muted` | `#5a6b72` | secondary text, never `#000` |
+| `--color-border` | `#e2ddd4` | |
 
 ## Commands
 
@@ -78,3 +80,13 @@ npx tsc --noEmit                   # typecheck
 npx vitest run                     # tests
 ./scripts/check-coding-standards.sh  # standards (also runs at pre-commit)
 ```
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
