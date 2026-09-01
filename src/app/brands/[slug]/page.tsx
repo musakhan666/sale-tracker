@@ -57,7 +57,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
     // "couldn't look") — degrade in place instead of 404ing a brand we
     // simply couldn't check.
     return (
-      <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6">
+      <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 p-6">
         <header className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold text-text">{slug}</h1>
         </header>
@@ -73,7 +73,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
   const { brand, sales } = result.data;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6">
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 p-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold text-text">{brand.name}</h1>
       </header>
@@ -84,9 +84,17 @@ export default async function BrandPage({ params }: BrandPageProps) {
         </h2>
 
         {sales.length > 0 ? (
-          sales.map((sale) => (
-            <SaleCard key={sale._id} sale={sale} brandName={brand.name} status={saleStatus(sale, now)} />
-          ))
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {sales.map((sale) => (
+              <SaleCard
+                key={sale._id}
+                sale={sale}
+                brandName={brand.name}
+                brandSlug={brand.slug}
+                status={saleStatus(sale, now)}
+              />
+            ))}
+          </div>
         ) : (
           <p className="text-sm text-muted">No sales are on the schedule for this brand right now.</p>
         )}

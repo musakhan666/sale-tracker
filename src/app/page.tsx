@@ -49,7 +49,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const sales = applySaleFilters(allSales, filters, now);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6">
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 p-6">
       <header className="flex flex-col gap-2 text-center">
         <h1 className="text-2xl font-semibold text-text">Sale Tracker</h1>
         <p className="text-sm text-muted">Upcoming sales, organised by brand.</p>
@@ -57,15 +57,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <SaleFilters brandOptions={brandOptions} filters={filters} />
 
-      <section aria-labelledby="sales-heading" className="flex flex-col gap-4">
+      <section aria-labelledby="sales-heading" className="flex flex-col gap-5">
         <h2 id="sales-heading" className="text-lg font-semibold text-text">
           All sales
         </h2>
 
         {sales.length > 0 ? (
-          sales.map(({ sale, brandName }) => (
-            <SaleCard key={sale._id} sale={sale} brandName={brandName} status={saleStatus(sale, now)} />
-          ))
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {sales.map(({ sale, brandName, slug }) => (
+              <SaleCard
+                key={sale._id}
+                sale={sale}
+                brandName={brandName}
+                brandSlug={slug}
+                status={saleStatus(sale, now)}
+              />
+            ))}
+          </div>
         ) : (
           <p className="text-sm text-muted">
             {emptyStateMessage(result.ok, filters.brandSlug !== undefined || filters.status !== undefined, allSales.length)}
