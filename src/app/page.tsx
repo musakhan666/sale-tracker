@@ -17,10 +17,13 @@ type HomePageProps = {
 };
 
 /** Distinguishes "nothing was ever on the schedule" from "the current filters matched nothing" from "couldn't reach the deployment" — AC-4 requires all three to render, never crash. */
-function emptyStateMessage(fetchOk: boolean, totalCount: number, filteredCount: number): string {
+function emptyStateMessage(fetchOk: boolean, filtered: boolean, totalCount: number): string {
   if (!fetchOk) return "Sales aren't available yet — check back soon.";
+  // Checked before the empty-schedule case: with a brand filter applied the
+  // query is already brand-scoped, so an empty result means the filter
+  // matched nothing, not that the schedule is bare.
+  if (filtered) return "No sales match the selected filters.";
   if (totalCount === 0) return "No sales are on the schedule right now.";
-  if (filteredCount === 0) return "No sales match the selected filters.";
   return "";
 }
 
@@ -28,11 +31,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   // Read once, at request time, and thread it through — every sale on this
   // page is judged against the same instant.
   const now = Date.now();
-  const [result, rawSearchParams] = await Promise.all([fetchSalesWithBrands(), searchParams]);
-  const filters = parseSaleFilters(rawSearchParams);
+  // The filters decide what to fetch, so they are parsed first: a brand
+  // filter is pushed into the query rather than applied to its result.
+  const filters = parseSaleFilters(await searchParams);
+  const result = await fetchSalesWithBrands({ brandSlug: filters.brandSlug });
 
   const allSales = result.ok ? result.sales : [];
-  const brandOptions = buildBrandOptions(allSales);
+  // Options come from every brand, not from the returned sales — those are
+  // already brand-scoped when a filter is on, which would collapse the list
+  // to the single selected option.
+  const brandOptions = result.ok
+    ? buildBrandOptions(result.brands.map((brand) => ({ slug: brand.slug, brandName: brand.name })))
+    : [];
+  // Status still derives through saleStatus() here rather than the query's
+  // stored-status index: the column is a cron-maintained mirror (ADR-002),
+  // and the derived value is the one that is correct at this instant.
   const sales = applySaleFilters(allSales, filters, now);
 
   return (
@@ -54,7 +67,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <SaleCard key={sale._id} sale={sale} brandName={brandName} status={saleStatus(sale, now)} />
           ))
         ) : (
-          <p className="text-sm text-muted">{emptyStateMessage(result.ok, allSales.length, sales.length)}</p>
+          <p className="text-sm text-muted">
+            {emptyStateMessage(result.ok, filters.brandSlug !== undefined || filters.status !== undefined, allSales.length)}
+          </p>
         )}
       </section>
     </main>

@@ -38,7 +38,7 @@ export type SaleWithBrand = {
 };
 
 export type SalesFetchResult =
-  | { ok: true; sales: SaleWithBrand[] }
+  | { ok: true; sales: SaleWithBrand[]; brands: Doc<"brands">[] }
   | { ok: false; reason: "not-configured" | "fetch-failed" };
 
 export type BrandWithSales = {
@@ -57,6 +57,13 @@ export type BrandPageFetchResult =
 // unfiltered listing.
 const BRAND_SALES_LIMIT = 200;
 
+// The listing's own bound. Narrowing by brand happens in the query, through
+// by_brand; everything after that — status derivation and sorting — runs in
+// memory, so this must be large enough that it never truncates the set those
+// steps operate on. A page-sized bound here silently drops a brand's sales
+// past the page edge before the filter ever runs.
+const LISTING_LIMIT = 200;
+
 const salesList: FunctionReference<"query", "public", Record<string, never>, Doc<"sales">[]> =
   makeFunctionReference("sales:list");
 
@@ -65,6 +72,13 @@ const brandsList: FunctionReference<"query", "public", Record<string, never>, Do
 
 const brandGetBySlug: FunctionReference<"query", "public", { slug: string }, Doc<"brands"> | null> =
   makeFunctionReference("brands:getBySlug");
+
+const salesListFiltered: FunctionReference<
+  "query",
+  "public",
+  { brandId?: Id<"brands">; limit?: number },
+  Doc<"sales">[]
+> = makeFunctionReference("sales:list");
 
 const salesListByBrand: FunctionReference<
   "query",
@@ -78,18 +92,38 @@ function getConvexClient(): ConvexHttpClient | null {
   return url === undefined || url === "" ? null : new ConvexHttpClient(url);
 }
 
-/** Every sale, soonest-opening first, paired with its brand's display name and stable slug. */
-export async function fetchSalesWithBrands(): Promise<SalesFetchResult> {
+/**
+ * Sales for the public listing, soonest-opening first, each paired with its
+ * brand's display name and stable slug — plus every brand, for the filter's
+ * option list.
+ *
+ * A `brandSlug` narrows the query itself, through the `by_brand` index. It is
+ * deliberately not a caller-side filter: filtering a bounded page in memory
+ * drops any sale that fell past the page edge, so a brand with more sales than
+ * the page holds would silently under-report.
+ */
+export async function fetchSalesWithBrands(
+  options: { brandSlug?: string } = {},
+): Promise<SalesFetchResult> {
   const client = getConvexClient();
   if (client === null) return { ok: false, reason: "not-configured" };
 
   try {
-    const [sales, brands] = await Promise.all([client.query(salesList, {}), client.query(brandsList, {})]);
-    // Project both fields through in one pass — the brand document is
-    // already in hand here, so `slug` costs nothing extra to carry.
+    const brands = await client.query(brandsList, {});
     const brandById = new Map(brands.map((brand) => [brand._id, { name: brand.name, slug: brand.slug }]));
+
+    let brandId: Id<"brands"> | undefined;
+    if (options.brandSlug !== undefined) {
+      const match = brands.find((brand) => brand.slug === options.brandSlug);
+      // An unknown slug matches nothing — distinct from no filter at all.
+      if (match === undefined) return { ok: true, sales: [], brands };
+      brandId = match._id;
+    }
+
+    const sales = await client.query(salesListFiltered, { brandId, limit: LISTING_LIMIT });
     return {
       ok: true,
+      brands,
       sales: sales.map((sale) => {
         const brand = brandById.get(sale.brandId);
         return {
